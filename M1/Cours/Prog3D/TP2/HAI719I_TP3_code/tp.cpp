@@ -142,7 +142,7 @@ void init () {
     glEnable (GL_DEPTH_TEST);
     glClearColor (0.2f, 0.2f, 0.3f, 1.0f);
     glEnable(GL_COLOR_MATERIAL);
-    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // Initialize GLEW
     glewExperimental = true; // Needed for core profile
@@ -185,7 +185,7 @@ void draw () {
     transform = glm::translate(transform,position);
     glUniformMatrix4fv(transformLoc,1,GL_FALSE,&transform[0][0]);
 
-
+    
     // 1rst attribute buffer : vertices
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
@@ -201,28 +201,29 @@ void draw () {
     // Index buffer
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
 
+    /*
     // Draw the triangles !
     //Premiere chaise commentee
-    /*
+    
     glDrawElements(
                 GL_TRIANGLES,      // mode
                 indices.size(),    // count
                 GL_UNSIGNED_SHORT,   // type
                 (void*)0           // element array buffer offset
                 );
-    */
+    
 
     // Afficher une seconde chaise
         glm::mat4 transform2 = glm::mat4(1.0f);
         transform2 = glm::scale(transform2,glm::vec3(0.5f*zoom,0.5f*zoom,0.5f*zoom));
         transform2 = glm::translate(transform2,glm::vec3(-1.f,-2.f,0.f));
         glUniformMatrix4fv(transformLoc,1,GL_FALSE,&transform2[0][0]);
-        // glDrawElements(
-        //         GL_TRIANGLES,      // mode
-        //         indices.size(),    // count
-        //         GL_UNSIGNED_SHORT,   // type
-        //         (void*)0           // element array buffer offset
-        //         );
+        glDrawElements(
+                GL_TRIANGLES,      // mode
+                indices.size(),    // count
+                GL_UNSIGNED_SHORT,   // type
+                (void*)0           // element array buffer offset
+                );
 
 
 
@@ -232,12 +233,12 @@ void draw () {
     transform3 = glm::scale(transform3,glm::vec3(-0.5f*zoom,0.5f*zoom,0.5f*zoom));
     transform3 = glm::translate(transform3,glm::vec3(-1.f,-2.f,0.f));
     glUniformMatrix4fv(transformLoc,1,GL_FALSE,&transform3[0][0]);
-    // glDrawElements(
-    //             GL_TRIANGLES,      // mode
-    //             indices.size(),    // count
-    //             GL_UNSIGNED_SHORT,   // type
-    //             (void*)0           // element array buffer offset
-    //             );
+    glDrawElements(
+                GL_TRIANGLES,      // mode
+                indices.size(),    // count
+                GL_UNSIGNED_SHORT,   // type
+                (void*)0           // element array buffer offset
+                );
     
     //Afficher la quatrieme chaise
     glm::mat4 transform4 = glm::mat4(1.0f);
@@ -246,14 +247,13 @@ void draw () {
     transform4 = glm::translate(transform4, glm::vec3(0.0f, -0.5f, 0.0f)); 
     transform4 = glm::scale(transform4, glm::vec3(1.f * zoom, 1.f * zoom, 1.f * zoom)); 
     glUniformMatrix4fv(transformLoc, 1, GL_FALSE, &transform4[0][0]);
-    // glDrawElements(
-    //     GL_TRIANGLES,      // mode
-    //     indices.size(),    // count
-    //     GL_UNSIGNED_SHORT, // type
-    //     (void*)0           // element array buffer offset
-    // );
-    // Afficher suzanne Appliquez-lui une rotation 3D d'un angle contrôlé au clavier, et autour d'un axequelconque via glm::rotate(matrice, angle_in_degrees,rotation_axis).
-    //b. Calculez et appliquez une rotation de telle sorte que l'axe vertical du personnage (0,1,0)soit aligné avec le vecteur (1,1,1) du repère monde.
+    glDrawElements(
+        GL_TRIANGLES,      // mode
+        indices.size(),    // count
+        GL_UNSIGNED_SHORT, // type
+        (void*)0           // element array buffer offset
+    );
+    // Suzanne
     glm::mat4 transform5 = glm::mat4(1.0f);
     glm::vec3 repereMonde = glm::vec3(1.f, 1.f, 1.f);
     glm::vec3 characterAxis = glm::vec3(0.f, 1.f, 0.f);
@@ -261,6 +261,43 @@ void draw () {
     transform5 = glm::rotate(transform5, glm::radians(angle), rotationAxis);
     transform5 = glm::scale(transform5, glm::vec3(zoom, zoom, zoom));
     glUniformMatrix4fv(transformLoc, 1, GL_FALSE, &transform5[0][0]);
+    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, (void*)0);
+    */
+
+    // Soleil
+    glm::mat4 transformSun = glm::mat4(1.0f);
+
+    transformSun = glm::translate(transformSun, glm::vec3(0.0f, 0.0f, 0.0f));
+    transformSun = glm::rotate(transformSun, glm::radians(angle/2.f), glm::vec3(0.0f, 1.0f, 0.0f));
+    transformSun = glm::scale(transformSun, glm::vec3(1.f, 1.f, 1.f));
+    glUniformMatrix4fv(transformLoc, 1, GL_FALSE, &transformSun[0][0]);
+    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, (void*)0);
+
+    // Terre
+    glm::mat4 transformEarth = glm::mat4(1.0f);
+    //tourner autour du soleil
+    transformEarth = glm::rotate(transformEarth, glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
+    transformEarth = glm::translate(transformEarth, glm::vec3(2.0f, 0.0f, 0.0f));
+    //autour de son axe a 23 degrees
+    transformEarth = glm::rotate(transformEarth, glm::radians(23.0f), glm::vec3(0.0f, 0.0f, 1.0f)); 
+    transformEarth = glm::rotate(transformEarth, glm::radians(angle/1.5f), glm::vec3(0.0f, 1.0f, 0.0f)); 
+
+    transformEarth = glm::scale(transformEarth, glm::vec3(0.3f, 0.3f, 0.3f));
+    glUniformMatrix4fv(transformLoc, 1, GL_FALSE, &transformEarth[0][0]);
+    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, (void*)0);
+
+    // Lune
+    glm::mat4 transformMoon = glm::mat4(1.0f);
+
+    //tourner autour de la terre
+    transformMoon = glm::rotate(transformMoon, glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
+    transformMoon = glm::translate(transformMoon, glm::vec3(2.0f, 0.0f, 0.0f)); 
+    transformMoon = glm::rotate(transformMoon, glm::radians(angle * 3.f), glm::vec3(0.0f, 1.0f, 0.0f)); 
+    transformMoon = glm::translate(transformMoon, glm::vec3(0.5f, 0.0f, 0.0f)); 
+    //tourner sur elle meme (valeur prise du schema)
+    transformMoon = glm::rotate(transformMoon, glm::radians(angle * 3.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    transformMoon = glm::scale(transformMoon, glm::vec3(0.1f, 0.1f, 0.1f));
+    glUniformMatrix4fv(transformLoc, 1, GL_FALSE, &transformMoon[0][0]);
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, (void*)0);
 
     glDisableVertexAttribArray(0);
@@ -282,6 +319,7 @@ void idle () {
     float time = glutGet(GLUT_ELAPSED_TIME) / 1000.f;
     deltaTime = time - lastFrame;
     lastFrame = time;
+    angle+=0.5f;
 }
 
 void key (unsigned char keyPressed, int x, int y) {
@@ -450,7 +488,7 @@ int main (int argc, char ** argv) {
     programID = LoadShaders( "vertex_shader.glsl", "fragment_shader.glsl" );
 
     //Chargement du fichier de maillage
-    std::string filename("data/suzanne.off");
+    std::string filename("data/sphere.off");
     loadOFF(filename, indexed_vertices, indices, triangles );
 
     // Load it into a VBO
