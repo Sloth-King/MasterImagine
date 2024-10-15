@@ -64,7 +64,6 @@ class EnveloppeConvexe{
 				next = i;
 			}
 		}
-		console.log(next);
 		return next;
 	}
 
@@ -73,6 +72,7 @@ class EnveloppeConvexe{
 		for(; k < this.points.length ; k++){
 			if(k != i && k != j) break;
 		}
+		
 		return k;
 	}
 
@@ -109,21 +109,36 @@ class EnveloppeConvexe{
 				}
 			}
 		}
-
+		//console log all elements of res
+		for(let i = 0 ; i < res.length ; i++){
+			console.log("res[", i, "] = ", res[i]);
+		}
 		this.envconv = this.convertForEnVConv(res);
 	}
 
-	convertForEnVConv(res){
+	convertForEnVConv(res) {
 		let newArray = [res[0][0], res[0][1]];
-		for(let i = 0 ; i < res.length ; i++){
-			for(let j = 0 ; j < res.length ; j++){
-				if ((newArray.at(-1) == res[j][0]) && (!newArray.includes(res[j][1]))){
+	
+		for (let i = 0; i < res.length; i++) {
+			for (let j = 0; j < res.length; j++) {
+				if ((newArray.at(-1) == res[j][0]) && (!newArray.includes(res[j][1]))) {
 					newArray.push(res[j][1]);
 				}
 			}
 		}
+		for (let i = res.length - 1; i >= 0; i--) {
+			for (let j = res.length - 1; j >= 0; j--) {
+				if ((newArray[0] == res[j][1]) && (!newArray.includes(res[j][0]))) {
+					newArray.unshift(res[j][0]);
+				}
+			}
+		}
+	
+		console.log("New Array : ", newArray);
 		return newArray;
 	}
+	
+
 	
 
 	algoJarvis() {
@@ -142,12 +157,9 @@ class EnveloppeConvexe{
 		this.envconv = res;
 	}
 
-	algoGraham(){
-		console.log("algo de Graham")
-		//todo
 
+    algoGraham() {}
 
-	}
 
 	//fonction à appeler pour afficher l'enveloppe convexe dans le canvas
 	drawIn(displayer) {

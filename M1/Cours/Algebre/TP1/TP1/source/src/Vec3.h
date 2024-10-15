@@ -243,6 +243,32 @@ public:
         return Mat3(-vals[0], -vals[1], -vals[2], -vals[3], -vals[4], -vals[5], -vals[6], -vals[7], -vals[8]);
     }
 
+    //Determinant of the matrix
+    float det() const {
+        return vals[0] * vals[4] * vals[8] + vals[1] * vals[5] * vals[6] + vals[2] * vals[3] * vals[7] -
+               vals[2] * vals[4] * vals[6] - vals[1] * vals[3] * vals[8] - vals[0] * vals[5] * vals[7];
+    }
+
+    //Inverse of the matrix
+    Mat3 inverse(){
+        Mat3 res;
+        float det = this->det();
+        if(det == 0){
+            std::cerr << "Matrix is not invertible" << std::endl;
+            return res;
+        }
+        res(0,0) = (vals[4]*vals[8] - vals[5]*vals[7])/det;
+        res(0,1) = (vals[2]*vals[7] - vals[1]*vals[8])/det;
+        res(0,2) = (vals[1]*vals[5] - vals[2]*vals[4])/det;
+        res(1,0) = (vals[5]*vals[6] - vals[3]*vals[8])/det;
+        res(1,1) = (vals[0]*vals[8] - vals[2]*vals[6])/det;
+        res(1,2) = (vals[2]*vals[3] - vals[0]*vals[5])/det;
+        res(2,0) = (vals[3]*vals[7] - vals[4]*vals[6])/det;
+        res(2,1) = (vals[1]*vals[6] - vals[0]*vals[7])/det;
+        res(2,2) = (vals[0]*vals[4] - vals[1]*vals[3])/det;
+        return res;
+    }
+
 
 private:
     float vals[9];
@@ -268,3 +294,8 @@ inline static std::ostream &operator<<(std::ostream &s, Mat3 const &m) {
 
 
 #endif
+
+// Determinant Mat3
+// Inversion Mat3
+// Trace Mat3
+// Transpose Mat3
