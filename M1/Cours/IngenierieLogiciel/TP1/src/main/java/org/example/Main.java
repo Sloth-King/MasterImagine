@@ -18,4 +18,4 @@ public class Main {
         System.out.println("Get : " + dic2.get(0));
         System.out.println("Contains : " + dic2.containsKey("hello"));
     }
-}
+}qq
