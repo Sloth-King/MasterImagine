@@ -98,21 +98,18 @@ public:
         }
         if(determinant > 0){
             intersection.intersectionExists = true;
-            float x1 = (-b - sqrt(determinant))/2*a;
-            float x2 = (-b + sqrt(determinant))/2*a;
-            if(x1 > 0 && x2 > 0 ){
-                intersection.t = std::max(x1,x2);
-            }
-            else if(x1 < 0 && x2 > 0){
-                intersection.t = x2;
-            }
-            else if(x1 > 0 && x2 < 0){
-                intersection.t = x1;
-            }
-            else{
-                intersection.intersectionExists = false;
-                return intersection;
-            }
+            float x1 = (-b - sqrt(determinant))/ (2*a);
+            float x2 = (-b + sqrt(determinant))/ (2*a);
+        if (x1 > 0 && x2 > 0) {
+            intersection.t = std::min(x1, x2);  
+        } else if (x1 < 0 && x2 > 0) {
+            intersection.t = x2;  
+        } else if (x1 > 0 && x2 < 0) {
+            intersection.t = x1;  
+        } else {
+            intersection.intersectionExists = false; 
+            return intersection;
+        }
   
         }
         intersection.intersection = o + d * intersection.t;

@@ -1,0 +1,10 @@
+Sources : 
+
+In general : 
+Ray tracing in one weekend
+
+Square intersection : 
+https://computergraphics.stackexchange.com/questions/8418/get-intersection-ray-with-square
+
+Soft shadows : 
+https://medium.com/@alexander.wester/ray-tracing-soft-shadows-in-real-time-a53b836d123b

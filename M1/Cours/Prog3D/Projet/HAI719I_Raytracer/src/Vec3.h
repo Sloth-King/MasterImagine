@@ -263,6 +263,27 @@ public:
         return Mat3(-vals[0], -vals[1], -vals[2], -vals[3], -vals[4], -vals[5], -vals[6], -vals[7], -vals[8]);
     }
 
+    static Mat3 rotationMatrix(Vec3 axis, float angle) {
+        axis.normalize();
+        float cosAngle = cos(angle);
+        float sinAngle = sin(angle);
+        float oneMinusCos = 1.0f - cosAngle;
+
+        return Mat3(
+            cosAngle + axis[0] * axis[0] * oneMinusCos,
+            axis[0] * axis[1] * oneMinusCos - axis[2] * sinAngle,
+            axis[0] * axis[2] * oneMinusCos + axis[1] * sinAngle,
+
+            axis[1] * axis[0] * oneMinusCos + axis[2] * sinAngle,
+            cosAngle + axis[1] * axis[1] * oneMinusCos,
+            axis[1] * axis[2] * oneMinusCos - axis[0] * sinAngle,
+
+            axis[2] * axis[0] * oneMinusCos - axis[1] * sinAngle,
+            axis[2] * axis[1] * oneMinusCos + axis[0] * sinAngle,
+            cosAngle + axis[2] * axis[2] * oneMinusCos
+        );
+    }
+
 
 private:
     float vals[9];
