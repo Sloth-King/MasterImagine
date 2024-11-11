@@ -12,7 +12,7 @@ class Interactor {
         //this.currentMove = new SnakeMove();
         this.currentMove = new BlocMove();
 
-        this.animator = new Animator(24 , 1000);
+        this.animator = new Animation();
 
         this.control("mousedown", p_displayer.getCanvas(), this, this.handlePress);
         this.control("mousemove", p_displayer.getCanvas(), this, this.handleMove);
@@ -64,7 +64,6 @@ class Interactor {
         e.stopImmediatePropagation();
         let selection = this.chain.pick(this.displayer, e);
         let msgOldSelection = this.selection ? this.selection.toString() : this.selection, msgNewSelection = selection ? selection.toString(): undefined;
-       //console.log("handlePress - selection = " + msgNewSelection + ", this.selection = " + msgOldSelection + ", state =  " + this.state);
         this.needRefreshing = false;
         this.previousLocation = { x: e.offsetX, y: e.offsetY };
         //this.currentMove = new SnakeMove();
@@ -136,12 +135,36 @@ class Interactor {
 
     saveKey(){
         console.log("KLE");
-        
+        this.chain.saveKeyFrame();
     }
 
-    playAnim(){
-        console.log("ANIM");
+    playAnim() {
+        console.log("Playing animation...");
+        this.chain.initAnim();
+        this.chain.run();
+
+        this.chain.animation.firstStep = (start) => {
+            this.chain.updateSkeleton(this.chain.frames[0]);
+            console.log("first frame " + this.chain.frames[0].length);
+            this.chain.draw(this.displayer, undefined, false);
+        };
+
+        this.chain.animation.nextStep = (t) => {
+            const frameIndex = this.chain.animation.step;
+            if (frameIndex < this.chain.frames.length) {
+                this.chain.updateSkeleton(this.chain.frames[frameIndex]);
+                console.log("frame " + this.chain.frames[frameIndex].length);
+                this.chain.draw(this.displayer, undefined, false);
+            }
+        };
+
+        this.chain.animation.lastStep = (end) => {
+            console.log("Animation completed.");
+        };
+
+        this.chain.animation.run();
     }
+
 }
 
 class Displayer {

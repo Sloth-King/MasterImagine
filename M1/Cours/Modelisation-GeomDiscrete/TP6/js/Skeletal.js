@@ -1,3 +1,4 @@
+
 class CMove {
     sens = Sens.forward;
     force = 11;
@@ -215,19 +216,70 @@ class Squelette {
         this.animation = new Animation();
     }
 
-    interpolateFrames(key1 , key2 , t){
-        let nb_key = keys.length();
-        let nb_frames = this.animation.maxStep;
-        let frames_to_interpolate = nb_frames/nb_key;
+    saveKeyFrame() {
+        const keyframe = {
+            nodes: this.nodes.map(node => ({
+                x: node.cc.x,
+                y: node.cc.y,
+            })),
+            edges: this.edges.map(edge => ({
+                from: this.nodes.indexOf(edge.from),
+                to: this.nodes.indexOf(edge.to),
+            }))
+        };
+        this.keys.push(keyframe);
     }
 
-    initAnim(){
-        let a = this.animation;
-        this.animation.nextStep = function(t){
-            frames[a.step];
+    interpolateFrames(key1, key2, t) {
+        const num_frames = this.animation.maxStep;
+        const frames_to_interpolate = num_frames / (this.keys.length - 1);
+
+        for (let i = 0; i < frames_to_interpolate; i++) {
+            let frame = {
+                nodes: key1.nodes.map((node, index) => ({
+                    x: node.x + (key2.nodes[index].x - node.x) * (i / frames_to_interpolate),
+                    y: node.y + (key2.nodes[index].y - node.y) * (i / frames_to_interpolate),
+                })),
+                edges: key1.edges.map(edge => ({
+                    from: edge.from,
+                    to: edge.to,
+                }))
+            };
+            this.frames.push(frame);
         }
     }
 
+    // initAnim(){
+    //     let a = this.animation;
+    //     this.animation.nextStep = function(t){
+    //         frames[a.step];
+    //     }
+    // }
+
+    initAnim() {
+        const keys = this.keys;
+        this.frames = [];
+
+        for (let i = 0; i < keys.length - 1; i++) {
+            this.interpolateFrames(keys[i], keys[i + 1], this.animation.maxStep);
+        }
+    }
+
+    updateSkeleton(frame) {
+        this.nodes.forEach((node, index) => {
+            node.cc.x = frame.nodes[index].x;
+            node.cc.y = frame.nodes[index].y;
+        });
+
+        this.edges.forEach((edge, index) => {
+            edge.from = this.nodes[frame.edges[index].from];
+            edge.to = this.nodes[frame.edges[index].to];
+        });
+    } 
+
+    run() {
+        //this.animation.test();
+    }
 
     //forward = false pour backward
     changeDirection(forward) {

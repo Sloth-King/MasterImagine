@@ -39,6 +39,10 @@ class Animation {
             console.log("Animation terminee (" + this.duration + " secondes) ");
        }
     }
+
+    test() {
+        console.log("Test");
+    }
 }
 
 
