@@ -36,13 +36,22 @@ class Interactor {
     
     manageKey(e){
         switch(e.key){
+            case "k" :
+            case "K" :
+                this.saveKey(e); 
+                break;
             case "s" :
             case "S" :
-                this.saveKey(e); 
+                this.saveAnim(e);
                 break;
             case "p" : 
             case "P" :
-                this.playAnim(e);
+                this.playSavedAnim(e);
+                break;
+            case "r" :
+            case "R" :
+                this.chain.reset();
+                this.chain.draw(this.displayer, undefined, false);
                 break;
         }
     }
@@ -138,14 +147,25 @@ class Interactor {
         this.chain.saveKeyFrame();
     }
 
-    playAnim() {
-        console.log("Playing animation...");
-        this.chain.initAnim();
-        this.chain.run();
+    saveAnim() {
+        console.log("Saving animation...");
+        this.chain.saveAnimation();
+    }
+
+    playSavedAnim() {
+        console.log("Playing saved animation...");
+        if (!this.chain.savedFrames || this.chain.savedFrames.length === 0) {
+            console.error("No saved animation to play.");
+            return;
+        }
+
+        this.chain.frames = [...this.chain.savedFrames]; // Load the saved frames
+
+        this.chain.animation.step = 0;
+        this.chain.animation.previousTimeStep = 0;
 
         this.chain.animation.firstStep = (start) => {
             this.chain.updateSkeleton(this.chain.frames[0]);
-            console.log("first frame " + this.chain.frames[0].length);
             this.chain.draw(this.displayer, undefined, false);
         };
 
@@ -153,20 +173,19 @@ class Interactor {
             const frameIndex = this.chain.animation.step;
             if (frameIndex < this.chain.frames.length) {
                 this.chain.updateSkeleton(this.chain.frames[frameIndex]);
-                console.log("frame " + this.chain.frames[frameIndex].length);
                 this.chain.draw(this.displayer, undefined, false);
+            } else {
+                this.chain.animation.step = 0; // Reset step to loop the animation
             }
         };
 
         this.chain.animation.lastStep = (end) => {
-            console.log("Animation completed.");
+            console.log("Saved animation completed.");
         };
 
         this.chain.animation.run();
     }
-
 }
-
 class Displayer {
     static defaultWindowSpace = { w: 600, h: 800 };
     static defaultModelSpace = {

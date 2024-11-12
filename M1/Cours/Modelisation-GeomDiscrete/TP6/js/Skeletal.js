@@ -51,26 +51,7 @@ class BlocMove extends CMove {
 }
 
 //rotation
-class AngleMove extends CMove {
-    // initMove(p_e, p_previousLocation, p_node, d) {
-    //     this.displayer = d;
-    //     let delta = new Coord2D(p_e.offsetX - p_previousLocation.x, p_e.offsetY - p_previousLocation.y);
-
-    //     // Rotate only the directly connected node(s)
-    //     this.recursiveMove(p_node, d);
-    // }
-
-    // recursiveMove(p_node , angle , d){
-    //     let edges = p_node.getEdges(this.sens);
-    //     for(let edge of edges){
-    //         let nextNode = edge.to;
-    //         edge.changeAlpha(true);
-    //         let vect = edge.getVector(true);
-    //     }
-    // }
-
-}
-
+class AngleMove extends CMove {}
 
 class Node {
     cm; //coordonnées dans le modèle
@@ -214,6 +195,7 @@ class Squelette {
         this.frames = new Array();
         this.keys = new Array();
         this.animation = new Animation();
+        this.savedFrames = new Array();
     }
 
     saveKeyFrame() {
@@ -231,6 +213,7 @@ class Squelette {
     }
 
     interpolateFrames(key1, key2, t) {
+        console.log("Interpolating frames between key1 and key2");
         const num_frames = this.animation.maxStep;
         const frames_to_interpolate = num_frames / (this.keys.length - 1);
 
@@ -248,13 +231,6 @@ class Squelette {
             this.frames.push(frame);
         }
     }
-
-    // initAnim(){
-    //     let a = this.animation;
-    //     this.animation.nextStep = function(t){
-    //         frames[a.step];
-    //     }
-    // }
 
     initAnim() {
         const keys = this.keys;
@@ -275,16 +251,33 @@ class Squelette {
             edge.from = this.nodes[frame.edges[index].from];
             edge.to = this.nodes[frame.edges[index].to];
         });
-    } 
+    }
 
-    run() {
-        //this.animation.test();
+    saveAnimation() {
+        this.initAnim();
+        console.log("frames", this.frames.length);
+        this.savedFrames = this.frames;
+        console.log("savedFrames", this.savedFrames.length);
+        console.log("Animation saved.");
     }
 
     //forward = false pour backward
     changeDirection(forward) {
         this.forward = forward;
     }
+
+    reset() {
+        this.forward = true;
+        this.nodes = new Array();
+        this.edges = new Array();
+        this.initModel();
+        this.neverDrawnBefore = true;
+        this.frames = new Array();
+        this.keys = new Array();
+        this.animation = new Animation();
+        this.savedFrames = new Array();  
+    }
+
 
     getModelBox() {
         let minx = this.nodes[0].cm.x, miny = this.nodes[0].cm.y, maxx = minx, maxy = miny;
