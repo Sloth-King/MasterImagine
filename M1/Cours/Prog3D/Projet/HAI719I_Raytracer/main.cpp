@@ -52,6 +52,7 @@ static int lastX=0, lastY=0, lastZoom=0;
 static unsigned int FPS = 0;
 static bool fullScreen = false;
 
+
 std::vector<Scene> scenes;
 unsigned int selected_scene;
 
@@ -167,13 +168,14 @@ void idle () {
 
 
 void ray_trace_from_camera() {
-    int w = glutGet(GLUT_WINDOW_WIDTH)  ,   h = glutGet(GLUT_WINDOW_HEIGHT);
+    //float startTime = glutGet((GLenum)GLUT_ELAPSED_TIME);
+    int w = glutGet(GLUT_WINDOW_WIDTH), h = glutGet(GLUT_WINDOW_HEIGHT);
     std::cout << "Ray tracing a " << w << " x " << h << " image" << std::endl;
     camera.apply();
     Vec3 pos , dir;
     //    unsigned int nsamples = 100;
-    unsigned int nsamples = 50;
-    //unsigned int nsamples = 10;
+    //unsigned int nsamples = 50;
+    unsigned int nsamples = 10;
     //unsigned int nsamples = 25;
     std::vector< Vec3 > image( w*h , Vec3(0,0,0) );
     for (int y=0; y<h; y++){
@@ -189,6 +191,7 @@ void ray_trace_from_camera() {
             image[x + y*w] /= nsamples;
         }
     }
+    //std::cout << "Time elapsed : " << glutGet((GLenum)GLUT_ELAPSED_TIME) - startTime << " ms" << std::endl;
     std::cout << "\tDone" << std::endl;
 
     std::string filename = "./rendu.ppm";
@@ -322,10 +325,12 @@ int main (int argc, char ** argv) {
 
     camera.move(0., 0., -3.1);
     selected_scene=0;
-    scenes.resize(3);
+    scenes.resize(5);
     scenes[0].setup_single_sphere();
     scenes[1].setup_single_square();
     scenes[2].setup_cornell_box();
+    scenes[3].setup_single_triangle();
+    scenes[4].setup_mesh();
 
     glutMainLoop ();
     return EXIT_SUCCESS;

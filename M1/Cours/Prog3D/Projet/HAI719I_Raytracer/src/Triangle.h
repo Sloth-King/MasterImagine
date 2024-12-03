@@ -38,6 +38,7 @@ public:
     Vec3 projectOnSupportPlane( Vec3 const & p ) const {
         Vec3 result;
         //TODO completer
+        
         return result;
     }
     float squareDistanceToSupportPlane( Vec3 const & p ) const {
@@ -57,20 +58,77 @@ public:
         //TODO completer
         return result;
     }
+
+    //https://gamedev.stackexchange.com/questions/23743/whats-the-most-efficient-way-to-find-barycentric-coordinates
     void computeBarycentricCoordinates( Vec3 const & p , float & u0 , float & u1 , float & u2 ) const {
-        //TODO Complete
+                // 1. Compute vectors from the vertices of the triangle to the point p
+                Vec3 v0 = m_c[1] - m_c[0];
+                Vec3 v1 = m_c[2] - m_c[0];
+                Vec3 v2 = p - m_c[0];
+
+                // 2. Compute dot products
+                float dot00 = Vec3::dot(v0, v0);
+                float dot01 = Vec3::dot(v0, v1);
+                float dot02 = Vec3::dot(v0, v2);
+                float dot11 = Vec3::dot(v1, v1);
+                float dot12 = Vec3::dot(v1, v2);
+
+                // 3. Compute the barycentric coordinates
+                float invDenom = 1.0f / (dot00 * dot11 - dot01 * dot01);
+                u1 = (dot11 * dot02 - dot01 * dot12) * invDenom;
+                u2 = (dot00 * dot12 - dot01 * dot02) * invDenom;
+                u0 = 1.0f - u1 - u2;
     }
+
+
+    //https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-polygon-mesh/ray-tracing-polygon-mesh-part-1.html
 
     RayTriangleIntersection getIntersection( Ray const & ray ) const {
         RayTriangleIntersection result;
         // 1) check that the ray is not parallel to the triangle:
-
+        Plane supportPlane(m_c[0],m_normal);
+        if( supportPlane.isParallelTo(ray) ) {
+            result.intersectionExists = false;
+            return result;
+        }        
         // 2) check that the triangle is "in front of" the ray:
-
+        Vec3 intersectionPoint = supportPlane.getIntersectionPoint(ray);
+        Vec3 originToIntersection = intersectionPoint - ray.origin();
+        float t = Vec3::dot(originToIntersection,ray.direction());
+        if( t < 0.f ) {
+            result.intersectionExists = false;
+            return result;
+        }
         // 3) check that the intersection point is inside the triangle:
         // CONVENTION: compute u,v such that p = w0*c0 + w1*c1 + w2*c2, check that 0 <= w0,w1,w2 <= 1
 
+        float w0,w1,w2;
+        computeBarycentricCoordinates(intersectionPoint,w0,w1,w2);
+        if( w0 < 0.f || w0 > 1.f || w1 < 0.f || w1 > 1.f || w2 < 0.f || w2 > 1.f ) {
+            result.intersectionExists = false;
+            return result;
+        }
+
+        //INTERPOLATION
+        //http://web.archive.org/web/20090609111431/http://www.crackthecode.us/barycentric/barycentric_coordinates.html
+        //https://www.reddit.com/r/gamedev/comments/1bm5y8/vertex_normal_interpolation/?rdt=46710
+        Vec3 n0 = m_c[0]; n0.normalize();
+        Vec3 n1 = m_c[1]; n1.normalize();
+        Vec3 n2 = m_c[2]; n2.normalize();
+
+        Vec3 interpolatedNormal = w0*n0 + w1*n1 + w2*n2 ;
+
+
         // 4) Finally, if all conditions were met, then there is an intersection! :
+        result.intersectionExists = true;
+        result.t = t;
+        result.w0 = w0;
+        result.w1 = w1;
+        result.w2 = w2;
+        result.intersection = intersectionPoint;
+        //result.normal = m_normal;
+        result.normal = interpolatedNormal;
+        //result.tIndex = 0;
 
         return result;
     }

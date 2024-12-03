@@ -8,3 +8,10 @@ https://computergraphics.stackexchange.com/questions/8418/get-intersection-ray-w
 
 Soft shadows : 
 https://medium.com/@alexander.wester/ray-tracing-soft-shadows-in-real-time-a53b836d123b
+
+Mesh intersection : 
+Triangle intersection : 
+Cours
+https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-polygon-mesh/ray-tracing-polygon-mesh-part-1.html
+Parallele avec le plan : https://math.stackexchange.com/questions/1368461/how-do-i-verify-that-a-line-is-parallel-to-a-plane
+Intersection avec le plan : 
