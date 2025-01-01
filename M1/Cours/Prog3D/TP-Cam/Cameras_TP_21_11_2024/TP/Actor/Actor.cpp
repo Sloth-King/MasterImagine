@@ -25,7 +25,7 @@ void Actor::load(const char* _path, const glm::vec3& _color, GLuint _colorID)
 
 void Actor::update(float _deltaTime, GLFWwindow* _window, glm::quat _cameraRotation)
 {
-	/*if (ImGui::Begin("Interface"))
+	if (ImGui::Begin("Interface"))
 	{
 		ImGui::Separator();
 		ImGui::Checkbox("Show Target##target", &m_showTarget);
@@ -34,7 +34,7 @@ void Actor::update(float _deltaTime, GLFWwindow* _window, glm::quat _cameraRotat
 		ImGui::DragFloat("Gravity##target", &m_gravity, 0.1f, 0.1f, 100.0f);
 		ImGui::DragFloat("Jump Force##target", &m_jumpForce, 0.1f, 0.1f, 100.0f);
 	}
-	ImGui::End();*/
+	ImGui::End();
 
 	if (m_moveTarget)
 	{

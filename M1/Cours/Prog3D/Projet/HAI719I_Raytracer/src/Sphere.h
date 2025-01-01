@@ -84,7 +84,6 @@ public:
 
     RaySphereIntersection intersect(const Ray &ray) const {
         RaySphereIntersection intersection;
-        //TODO calcul l'intersection rayon sphere
         intersection.intersectionExists = false;
         Vec3 o = ray.origin();
         Vec3 d = ray.direction();
@@ -116,6 +115,7 @@ public:
         Vec3 normals = (intersection.intersection - m_center);
         normals.normalize();
         intersection.normal = normals;
+
 
         return intersection;
     }

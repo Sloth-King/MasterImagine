@@ -1485,6 +1485,7 @@ CMakeFiles/TP.dir/TP/TP.cpp.o: ../TP/TP.cpp \
   ../external/glm-0.9.7.1/glm/gtx/euler_angles.inl \
   ../external/glm-0.9.7.1/glm/gtx/compatibility.hpp \
   ../external/glm-0.9.7.1/glm/gtx/compatibility.inl \
+  ../common/quaternion_utils.hpp \
   ../common/vboindexer.hpp \
   ../common/texture.hpp \
   /usr/include/unistd.h \

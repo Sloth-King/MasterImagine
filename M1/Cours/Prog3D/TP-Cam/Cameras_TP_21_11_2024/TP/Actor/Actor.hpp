@@ -21,6 +21,9 @@ public:
 
 	bool		canMoveTarget() const {return m_moveTarget;}
 	glm::vec3	getPosition() const {return m_position;}
+	//NEW
+	glm::quat   getRotation() const {return m_rotation;}
+
 private:
 	bool m_showTarget{ false };
 	bool m_moveTarget{ false };

@@ -10,7 +10,7 @@ struct LightSource {
 
 
 //NEW : Ex1.2
-const int number_of_lights = 1;
+const int number_of_lights = 2;
 uniform LightSource lightSources[number_of_lights];
 //uniform sampler2D shadowMap;
 uniform sampler2D shadowMap[number_of_lights];
@@ -42,12 +42,12 @@ uniform mat4 projectionMat, modelViewMat, normalMat;
 float pi = 3.1415927;
 
 
-float ShadowCalculation(vec4 fragPosLightSpace){
-    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+float ShadowCalculation(vec4 fragPosLightSpace, int i){
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w; //depthMap * vec4 world space
     projCoords = projCoords * 0.5 + 0.5;
-    float closestDepth = texture(shadowMap , projCoords.xy).r;
-    float curentDepth = projCoords.z;
-    float shadow = currentDepth > closestDepth ? 0.0 : 1.0;
+    float closestDepth = texture(shadowMap[i] , projCoords.xy).r;
+    float currentDepth = projCoords.z;
+    float shadow = currentDepth-0.001 > closestDepth ? 0.0 : 1.0;
 
     return shadow;
 }
@@ -65,24 +65,26 @@ void main() {
             for (int i = 0; i < number_of_lights; ++i) {    
                 LightSource lightSource = lightSources[i];
             //
+                if(ShadowCalculation(lightSource.depthMap * vec4(fPositionWorldSpace,1), i) > 0.0){
             
-                if( lightSource.isActive == 1 ) { // WE ONLY CONSIDER LIGHTS THAT ARE SWITCHED ON
-                    vec3 wi = normalize ( vec3((modelViewMat * vec4(lightSources[i].position,1)).xyz) - fPosition ); // unit vector pointing to the light source (change if you use several light sources!!!)
-                    if( dot( wi , n ) >= 0.0 ) { // WE ONLY CONSIDER LIGHTS THAT ARE ON THE RIGHT HEMISPHERE (side of the tangent plane)
-                        vec3 wh = normalize( wi + wo ); // half vector (if wi changes, wo should change as well)
-                        vec3 Li = lightSource.color * lightSource.intensity;
+                    if( lightSource.isActive == 1 ) { // WE ONLY CONSIDER LIGHTS THAT ARE SWITCHED ON
+                        vec3 wi = normalize ( vec3((modelViewMat * vec4(lightSources[i].position,1)).xyz) - fPosition ); // unit vector pointing to the light source (change if you use several light sources!!!)
+                        if( dot( wi , n ) >= 0.0 ) { // WE ONLY CONSIDER LIGHTS THAT ARE ON THE RIGHT HEMISPHERE (side of the tangent plane)
+                            vec3 wh = normalize( wi + wo ); // half vector (if wi changes, wo should change as well)
+                            vec3 Li = lightSource.color * lightSource.intensity;
 
-                        vec4 lightSpacePos= shadowMaps[i] * lightSources[i].depthMap;
-                        
-                        radiance = radiance +
-                                Li // light color
-                                * material.albedo
-                                * ( max(dot(n,wi),0.0) + pow(max(dot(n,wh),0.0),material.shininess) )
-                                * ShadowCalculation(depthMap);
-                                ;
-                                // radiance = vec3(1.,0.,0.);
-            
+                            radiance = radiance +
+                                    Li // light color
+                                    * material.albedo
+                                    * ( max(dot(n,wi),0.0) + pow(max(dot(n,wh),0.0),material.shininess) )
+                                    ;
+                                    // radiance = vec3(1.,0.,0.);
+
+                        }
                     }
+                }
+                else{
+                    radiance = vec3(0.,0.,0.);
                 }
             }
         }   

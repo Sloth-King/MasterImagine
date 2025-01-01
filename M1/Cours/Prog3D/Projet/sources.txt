@@ -14,4 +14,8 @@ Triangle intersection :
 Cours
 https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-polygon-mesh/ray-tracing-polygon-mesh-part-1.html
 Parallele avec le plan : https://math.stackexchange.com/questions/1368461/how-do-i-verify-that-a-line-is-parallel-to-a-plane
-Intersection avec le plan : 
+Intersection avec le plan 
+
+Refraction : https://physics.stackexchange.com/questions/435512/snells-law-in-vector-form
+
+

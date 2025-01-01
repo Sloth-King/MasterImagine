@@ -51,27 +51,31 @@ void Camera_Helper::computeFinalView(glm::mat4& _outProjectionMatrix, glm::mat4&
 	_outviewMatrix = glm::lookAt(_position, _position + front, up);
 }
 
-glm::vec3 projectVectorOnPlane(glm::vec3 _vector, glm::vec3 _planeNormal)
+glm::vec3 Camera_Helper::projectVectorOnPlane(glm::vec3 _vector, glm::vec3 _planeNormal)
 {
 	return glm::cross(_planeNormal , glm::cross(_vector, _planeNormal));
 }
 
-float clipAngle180(float _angle)
+float Camera_Helper::clipAngle180(float _angle)
 {
-	_angle = fmod(_angle, 360.0);
-	if (_angle > 180.0)
-	{
-		_angle -= 360.0;
-	}
+    _angle = fmod(_angle, 2 * M_PI);
+    if (_angle > M_PI)
+    {
+        _angle -= 2 * M_PI;
+    }
+    else if (_angle < -M_PI)
+    {
+        _angle += 2 * M_PI;
+    }
 
-	return _angle;
-
+    return _angle;
 }
 
-float interpolateRatio(float ratio , InterpolationType type){
+float Camera_Helper::interpolationRatio(float ratio , InterpolationType type){
 	switch(type){
 		case InterpolationType::cos:
-			return (1 - cos(ratio * M_PI)/2);
+			//found here https://stackoverflow.com/questions/9026384/cosine-interpolation-with-integers
+			return (1 - cos(ratio * M_PI)) / 2;
 	}
 	return 0;
 }

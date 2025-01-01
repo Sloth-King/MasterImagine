@@ -1490,6 +1490,7 @@ CMakeFiles/TP.dir/TP/TP.cpp.o
  /home/andrew/Bureau/MasterInfo/M1/Cours/Prog3D/TP-Cam/Cameras_TP_21_11_2024/external/glm-0.9.7.1/glm/gtx/euler_angles.inl
  /home/andrew/Bureau/MasterInfo/M1/Cours/Prog3D/TP-Cam/Cameras_TP_21_11_2024/external/glm-0.9.7.1/glm/gtx/compatibility.hpp
  /home/andrew/Bureau/MasterInfo/M1/Cours/Prog3D/TP-Cam/Cameras_TP_21_11_2024/external/glm-0.9.7.1/glm/gtx/compatibility.inl
+ /home/andrew/Bureau/MasterInfo/M1/Cours/Prog3D/TP-Cam/Cameras_TP_21_11_2024/common/quaternion_utils.hpp
  /home/andrew/Bureau/MasterInfo/M1/Cours/Prog3D/TP-Cam/Cameras_TP_21_11_2024/common/vboindexer.hpp
  /home/andrew/Bureau/MasterInfo/M1/Cours/Prog3D/TP-Cam/Cameras_TP_21_11_2024/common/texture.hpp
  /usr/include/unistd.h

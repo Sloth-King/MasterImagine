@@ -25,7 +25,7 @@ public:
 	static glm::vec3 quatToEuler(glm::quat _quat);
 	static void computeFinalView(glm::mat4& _outProjectionMatrix, glm::mat4& _outviewMatrix, glm::vec3& _position, glm::quat _rotation, float _fovDegree);
 	static glm::vec3 projectVectorOnPlane(glm::vec3 _vector, glm::vec3 _planeNormal);
-	float clipAngle180(float _angle);
+	static float clipAngle180(float _angle);
 	//TODO 0 to 1 interpolation
-	float interpolationRatio(float ratio, InterpolationType type);
+	static float interpolationRatio(float ratio, InterpolationType type);
 };

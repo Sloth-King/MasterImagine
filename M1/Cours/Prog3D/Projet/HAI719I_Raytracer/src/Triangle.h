@@ -81,6 +81,11 @@ public:
     }
 
 
+    //need for kd
+    Vec3 get_mc(int i) const {
+        return m_c[i];
+    }
+
     //https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-polygon-mesh/ray-tracing-polygon-mesh-part-1.html
 
     RayTriangleIntersection getIntersection( Ray const & ray ) const {
@@ -112,12 +117,15 @@ public:
         //INTERPOLATION
         //http://web.archive.org/web/20090609111431/http://www.crackthecode.us/barycentric/barycentric_coordinates.html
         //https://www.reddit.com/r/gamedev/comments/1bm5y8/vertex_normal_interpolation/?rdt=46710
-        Vec3 n0 = m_c[0]; n0.normalize();
-        Vec3 n1 = m_c[1]; n1.normalize();
-        Vec3 n2 = m_c[2]; n2.normalize();
+        Vec3 n3 = Vec3::cross( m_c[1] - m_c[0] , m_c[2] - m_c[0] );
+        n3.normalize();
+        Vec3 n0 = m_c[0]; 
+        Vec3 n1 = m_c[1]; 
+        Vec3 n2 = m_c[2]; 
 
-        Vec3 interpolatedNormal = w0*n0 + w1*n1 + w2*n2 ;
+        Vec3 interpolatedNormal = w0*n3 + w1*n3 + w2*n3 ;
 
+        interpolatedNormal.normalize();
 
         // 4) Finally, if all conditions were met, then there is an intersection! :
         result.intersectionExists = true;
@@ -126,8 +134,8 @@ public:
         result.w1 = w1;
         result.w2 = w2;
         result.intersection = intersectionPoint;
-        //result.normal = m_normal;
-        result.normal = interpolatedNormal;
+        //result.normal = m_normal; //withoyt interpolation
+        result.normal = interpolatedNormal; //with interpolation
         //result.tIndex = 0;
 
         return result;

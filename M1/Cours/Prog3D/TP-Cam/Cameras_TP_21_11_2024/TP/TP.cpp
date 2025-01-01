@@ -25,6 +25,7 @@ GLFWwindow* window;
 #include <TP/Actor/Actor.hpp>
 #include <TP/Actor/ObjController.hpp>
 #include "TP/Camera/Camera.hpp"
+#include "common/quaternion_utils.hpp"
 
 using namespace glm;
 
@@ -110,6 +111,25 @@ int main(void)
         lastFrame = currentFrame;
 
         //input
+        if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
+            glm::quat camRotation = myCamera.getRotation();
+            target.moveGround(camRotation , window , deltaTime);
+        }
+        if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
+            glm::quat camRotation = myCamera.getRotation();
+            target.moveGround(camRotation , window , deltaTime);
+        }
+        if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
+            glm::quat camRotation = myCamera.getRotation();
+            target.moveGround(camRotation , window , deltaTime);
+        }
+        if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
+            glm::quat camRotation = myCamera.getRotation();
+            target.moveGround(camRotation , window , deltaTime);
+        }
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+            target.jumpUpdate(window , deltaTime);
+        }
 
         // Clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -124,6 +144,37 @@ int main(void)
 
         // Update
         target.update(deltaTime, window, myCamera.getRotation());
+    
+        if(myCamera.isAttachedToTarget()){
+            //TEST1
+            glm::vec3 offset(0.0f, 2.0f, -6.0f); 
+            glm::vec3 cameraPosition = target.getPosition() + offset;
+            myCamera.setPosition(cameraPosition);
+            glm::vec3 direction = glm::normalize(target.getPosition() - cameraPosition);
+        
+            glm::quat lookAtRotation = QuaternionUtils::LookAt(direction, target.getPosition());        
+            myCamera.setRotation(lookAtRotation);
+
+
+
+            //TEST2
+            // glm::vec3 offset = glm::quat(myCamera.getEulerAngle()) * glm::vec3(0.0f, 0.0f, -myCamera.getDist());
+            // glm::vec3 cameraPosition = target.getPosition() - offset;
+            // myCamera.setPosition(cameraPosition);
+
+            // glm::vec3 forward = glm::normalize(target.getPosition() - cameraPosition);
+            // glm::vec3 right = glm::normalize(glm::cross(glm::vec3(0.0f, 1.0f, 0.0f), forward));
+            // if (glm::length(right) < 0.001f)
+            // {
+            //     right = glm::normalize(glm::cross(glm::vec3(1.0f, 0.0f, 0.0f), forward));
+            // }
+            // glm::vec3 up = glm::cross(forward, right);
+
+            // glm::mat4 lookAtMatrix = glm::lookAt(cameraPosition, target.getPosition(), up);
+            // myCamera.setRotation(glm::quat_cast(lookAtMatrix));
+
+        }
+        
         myCamera.update(deltaTime, window);
 
 

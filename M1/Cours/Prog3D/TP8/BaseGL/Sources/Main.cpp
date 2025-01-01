@@ -224,11 +224,9 @@ struct Light {
 
     void setupCameraForShadowMapping(glm::vec3 scene_center , float scene_radius) {
         //NEW : Ex 2.1
-        // Compute depthMVP : the MVP matrix from the light's point of view
         glm::mat4 depthProjectionMatrix = glm::ortho(-scene_radius, scene_radius, -scene_radius, scene_radius, 0.1f, 2*scene_radius);
         glm::mat4 depthViewMatrix = glm::lookAt(m_position, scene_center, glm::vec3(0,-1,0)); //dir 
         depthMVP = depthProjectionMatrix * depthViewMatrix;
-
     }
 
     void allocateShadowMapFBO( unsigned int w = 800 , unsigned int h = 600) {
@@ -327,7 +325,7 @@ struct Scene{
             shaderProgramPtr->set ((lightName + ".isActive"), 1);
             shaderProgramPtr->set ((lightName + ".depthMap"), light.depthMVP);
 
-            shaderProgramPtr->set ((shadowMapName) , light.shadowMapTexOnGPU); // ERR
+            shaderProgramPtr->set ((shadowMapName) , (int)light.shadowMapTexOnGPU); // ERR
         }
 
         // Set the material for the plane mesh :
@@ -556,35 +554,20 @@ void initScene (const std::string & meshFilename) {
         {
             scene.scene_lights.resize( scene.scene_lights.size() + 1 );
             Light & newLight = scene.scene_lights[ scene.scene_lights.size() - 1 ];
-            newLight.m_position = glm::vec3 (-2*cos(app_timer), 2*sin(app_timer), 3.5);
+            newLight.m_position = glm::vec3 (0.5*cos(app_timer), -0.5*sin(app_timer), 1.5);
             newLight.m_color = glm::vec3(1.0, 1.0, 1.0);
             newLight.m_intensity = 0.5f;
             newLight.allocateShadowMapFBO(shadow_map_width , shadow_map_height);
             newLight.shadowMapTexOnGPU = texture_slot_available;   ++texture_slot_available;
-        }
 
-        //NEW : Ex1.1 second light 
-        {
             scene.scene_lights.resize( scene.scene_lights.size() + 1 );
-            Light & newLight = scene.scene_lights[ scene.scene_lights.size() - 1 ];
-            newLight.m_position = glm::vec3 (-2*cos(app_timer), 2*sin(app_timer), 2);
-            newLight.m_color = glm::vec3(1.0, 1.0, 1.0);
-            newLight.m_intensity = 0.5f;
-            newLight.allocateShadowMapFBO(shadow_map_width , shadow_map_height);
-            newLight.shadowMapTexOnGPU = texture_slot_available;   ++texture_slot_available;
+            Light & newLight2 = scene.scene_lights[ scene.scene_lights.size() - 1 ];
+            newLight2.m_position = glm::vec3 (-0.8*cos(app_timer), 0.8*sin(app_timer), 1);
+            newLight2.m_color = glm::vec3(1.0, 1.0, 1.0);
+            newLight2.m_intensity = 0.5f;
+            newLight2.allocateShadowMapFBO(shadow_map_width , shadow_map_height);
+            newLight2.shadowMapTexOnGPU = texture_slot_available;   ++texture_slot_available;
         }
-        // // //NEW : for fun just another camera
-        // {
-        //     scene.scene_lights.resize( scene.scene_lights.size() + 1 );
-        //     Light & newLight = scene.scene_lights[ scene.scene_lights.size() - 1 ];
-        //     newLight.m_position = glm::vec3 (-2*cos(app_timer), 2*sin(app_timer), 1);
-        //     newLight.m_color = glm::vec3(1.0 ,1.0, 1.0);
-        //     newLight.m_intensity = 0.5f;
-        //     newLight.allocateShadowMapFBO(shadow_map_width , shadow_map_height);
-        //     newLight.shadowMapTexOnGPU = texture_slot_available;   ++texture_slot_available;
-        // }
-
-
 
         for( int i = 0 ; i < scene.scene_lights.size() ; ++i ) {
             Light & light = scene.scene_lights[i];
@@ -662,8 +645,8 @@ void update (float currentTime) {
         app_timer += dt;
         // <---- Update here what needs to be animated over time ---->
 
-        Light & light0 = scene.scene_lights[ 0 ];
-        light0.m_position = glm::vec3 (-2*cos(app_timer), 2*sin(app_timer), 3.5);
+        Light & light0 = scene.scene_lights[0];
+        light0.m_position = glm::vec3 (0.5*cos(app_timer), -0.5*sin(app_timer), 1.5);
     }
 }
 

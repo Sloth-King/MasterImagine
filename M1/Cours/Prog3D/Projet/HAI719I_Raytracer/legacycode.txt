@@ -1,0 +1,135 @@
+Vec3 rayTraceRecursive(Ray ray, int NRemainingBounces) {
+
+    if (NRemainingBounces <= 0) {
+        return Vec3(0., 0., 0.); 
+    }
+
+    RaySceneIntersection raySceneIntersection = computeIntersection(ray);
+    Vec3 color(0., 0., 0.);
+
+    //Choisie arbitrairement
+    Vec3 ambient = Vec3(0.1, 0.1, 0.1);
+
+    if (raySceneIntersection.intersectionExists) {
+        Vec3 specular(0., 0., 0.);
+        Vec3 diffuse(0., 0., 0.);
+        float shininess = 0;
+
+        Vec3 N = Vec3(0., 0., 0.);
+        Vec3 intersectionPoint = Vec3(0., 0., 0.);
+
+        switch (raySceneIntersection.typeOfIntersectedObject) {
+            case 0:
+                diffuse = spheres[raySceneIntersection.objectIndex].material.diffuse_material;
+                specular = spheres[raySceneIntersection.objectIndex].material.specular_material;
+                shininess = spheres[raySceneIntersection.objectIndex].material.shininess;
+
+                N = raySceneIntersection.raySphereIntersection.normal;
+                intersectionPoint = raySceneIntersection.raySphereIntersection.intersection;
+
+                break;
+            case 1:
+                diffuse = squares[raySceneIntersection.objectIndex].material.diffuse_material;
+                specular = squares[raySceneIntersection.objectIndex].material.specular_material;
+                shininess = squares[raySceneIntersection.objectIndex].material.shininess;
+
+                N = raySceneIntersection.raySquareIntersection.normal;
+                intersectionPoint = raySceneIntersection.raySquareIntersection.intersection;
+
+                break;
+        }
+
+        for (int i = 0; i < lights.size(); i++) {
+            // Shadow computation
+            Vec3 L = lights[i].pos - intersectionPoint;
+            float lightDistance = L.length();
+            L.normalize();
+            Ray shadowRay(intersectionPoint + N * 0.001f, L); // Offset to avoid self-intersection
+            RaySceneIntersection shadowIntersection = computeIntersection(shadowRay);
+
+            if (shadowIntersection.intersectionExists && shadowIntersection.t < lightDistance) {
+                // In shadow
+                continue;
+            }
+
+            // Diffuse 
+            Vec3 Id = Vec3::compProduct(lights[i].material, diffuse) * std::max(0.f, Vec3::dot(N, L));
+            // Specular
+            Vec3 V = ray.origin() - intersectionPoint;
+            V.normalize();
+            Vec3 R = std::max(0.f, Vec3::dot(N, L)) * 2 * N - L;
+            Vec3 Iss = lights[i].material;
+            Vec3 Ks = specular;
+            Vec3 Is = Vec3::compProduct(Iss, Ks) * pow(std::max(0.f, Vec3::dot(R, V)), shininess);
+            
+            color += ambient + Id + Is;
+        }
+    } else {
+        color = Vec3(1., 1., 1.);
+    }
+
+    return color;
+}
+
+
+REFRACTION 
+
+                if (mat == Material_Glass) {
+                    double refractionIndex = 1.5;
+                    Vec3 unitDirection = ray.direction();
+                    unitDirection.normalize();  // Ensure normalization before using it in refraction
+                    Vec3 refracted = refract(unitDirection, N, 1.0 / refractionIndex);
+                
+                    // If refraction is possible (no total internal reflection)
+                    if (refracted.squareLength() > 0) {
+                        Ray refractedRay(intersectionPoint + N * 0.001f, refracted);
+                        color += rayTraceRecursive(refractedRay, NRemainingBounces - 1);
+                    }
+
+    
+Vec3 refract(Vec3 & uv , Vec3 & n , double etai_over_etat){
+    //raytracing in a weekend (didnt work smoge)
+    uv.normalize();
+    double cos_theta = fmin(Vec3::dot((-1*uv) , n) , 1.0);
+    Vec3 r_out_perp = etai_over_etat * (uv + cos_theta * n);
+    if ((1 - r_out_perp.squareLength()) < 0) {
+        return Vec3(0, 0, 0); 
+    }
+    Vec3 r_out_parallel = -1 * sqrt(fabs(1.0 - r_out_perp.squareLength())) * n;
+    return r_out_perp + r_out_parallel;
+}
+
+
+                    float refractionIndex = 1.5;
+                    Vec3 unitDirection = ray.direction();
+                    unitDirection.normalize();
+                    Vec3 refracted = refract(unitDirection, N, 1.0 / refractionIndex);
+                    if (refracted.squareLength() > 0) {
+                        Ray refractedRay(intersectionPoint + N * 0.001f, refracted);
+                        color += rayTraceRecursive(refractedRay, NRemainingBounces - 1);
+                    }
+
+                        Vec3 refract(const Vec3 & i, const Vec3 &n , float eta){
+        float cosi = Vec3::dot(i,n);
+        float cosi2 = cosi*cosi;
+        float eta_i = 1.0;
+        float eta_t = eta;
+        Vec3 normal = n;
+
+        if(cosi < 0){
+            cosi = -cosi;
+        }
+        else{
+            float tmp_eta = eta_i;
+            eta_i = eta_t;
+            eta_t = tmp_eta;
+            normal = -1*normal;
+        }
+
+        float mu = eta_i/eta_t;
+        float mu2 = mu*mu;
+
+        float k = 1 - mu2 * (1-cosi2);
+
+        return mu * i + (mu * cosi - sqrt(k)) * normal;
+    }

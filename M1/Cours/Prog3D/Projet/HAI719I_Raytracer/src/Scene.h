@@ -6,6 +6,8 @@
 #include "Mesh.h"
 #include "Sphere.h"
 #include "Square.h"
+//#include "KdTree.h"
+
 
 
 #include <GL/glut.h>
@@ -79,42 +81,47 @@ public:
 
     RaySceneIntersection computeIntersection(Ray const & ray){
         RaySceneIntersection result;
-        RaySphereIntersection intesectSphere;
-        RaySquareIntersection intesectSquare;
+        RaySphereIntersection intersectSphere;
+        RaySquareIntersection intersectSquare;
+        RayTriangleIntersection intersectMesh;
 
         result.intersectionExists = false;
         result.t = FLT_MAX;
 
         for(size_t i = 0 ; i < spheres.size() ; i++){
-            intesectSphere = spheres[i].intersect(ray);
-            if(intesectSphere.intersectionExists && intesectSphere.t < result.t){
-                result.intersectionExists = intesectSphere.intersectionExists;
+            intersectSphere = spheres[i].intersect(ray);
+            if(intersectSphere.intersectionExists && intersectSphere.t < result.t && intersectSphere.t > 0.0001){
+                result.intersectionExists = intersectSphere.intersectionExists;
                 result.typeOfIntersectedObject = 0;
-                result.t = intesectSphere.t;
+                result.t = intersectSphere.t;
                 result.objectIndex = i;
-                result.raySphereIntersection = intesectSphere;
+                result.raySphereIntersection = intersectSphere;
             }
         }
         for(size_t i = 0 ; i < squares.size() ; i++){
-            intesectSquare = squares[i].intersect(ray);
-            if(intesectSquare.intersectionExists && intesectSquare.t < result.t){
-                result.intersectionExists = intesectSquare.intersectionExists;
+            intersectSquare = squares[i].intersect(ray);
+            if(intersectSquare.intersectionExists && intersectSquare.t < result.t && intersectSquare.t > 0.0001){
+                result.intersectionExists = intersectSquare.intersectionExists;
                 result.typeOfIntersectedObject = 1;
-                result.t = intesectSquare.t;
+                result.t = intersectSquare.t;
                 result.objectIndex = i;
-                result.raySquareIntersection = intesectSquare;
+                result.raySquareIntersection = intersectSquare;
             }
         }
+        //no kd tree
         for(size_t i = 0 ; i < meshes.size() ; i++){
-            RayTriangleIntersection intesectMesh = meshes[i].intersect(ray);
-            if(intesectMesh.intersectionExists && intesectMesh.t < result.t){
-                result.intersectionExists = intesectMesh.intersectionExists;
+            intersectMesh = meshes[i].intersect(ray);
+            if(intersectMesh.intersectionExists && intersectMesh.t < result.t && intersectMesh.t > 0.0001){
+                result.intersectionExists = intersectMesh.intersectionExists;
                 result.typeOfIntersectedObject = 2;
-                result.t = intesectMesh.t;
+                result.t = intersectMesh.t;
                 result.objectIndex = i;
-                result.rayMeshIntersection = intesectMesh;
+                result.rayMeshIntersection = intersectMesh;
             }
+
         }
+        //kd tree
+
         return result;
     }
 
@@ -127,7 +134,7 @@ public:
         RaySceneIntersection raySceneIntersection = computeIntersection(ray);
         Vec3 color(0., 0., 0.);
 
-        MaterialType mat;
+        Material mat;
 
         if (raySceneIntersection.intersectionExists) {
             Vec3 specular(0., 0., 0.);
@@ -146,7 +153,7 @@ public:
                     ambient = spheres[raySceneIntersection.objectIndex].material.diffuse_material;
                     N = raySceneIntersection.raySphereIntersection.normal;
                     intersectionPoint = raySceneIntersection.raySphereIntersection.intersection;
-                    mat = spheres[raySceneIntersection.objectIndex].material.type;
+                    mat = spheres[raySceneIntersection.objectIndex].material;
 
                     break;
                 case 1:
@@ -156,6 +163,7 @@ public:
                     ambient = squares[raySceneIntersection.objectIndex].material.diffuse_material;
                     N = raySceneIntersection.raySquareIntersection.normal;
                     intersectionPoint = raySceneIntersection.raySquareIntersection.intersection;
+                    mat = squares[raySceneIntersection.objectIndex].material;
 
                     break;
                 case 2:
@@ -165,7 +173,7 @@ public:
                     ambient = meshes[raySceneIntersection.objectIndex].material.diffuse_material;
                     N = raySceneIntersection.rayMeshIntersection.normal;
                     intersectionPoint = raySceneIntersection.rayMeshIntersection.intersection;
-
+                    mat = meshes[raySceneIntersection.objectIndex].material;
                     break;
             }
 
@@ -220,26 +228,39 @@ public:
 
                 
                 //Mirror (reflect) (works)
-                if(mat == Material_Mirror){
+                //raytracing in a weekend
+                if(mat.type == Material_Mirror){
                     Vec3 reflectedDir = reflect(ray.direction(), N);
                     Ray reflectedRay(intersectionPoint + N * 0.001f, reflectedDir);
                     color += rayTraceRecursive(reflectedRay, NRemainingBounces - 1);
+                    return color;
                 }
 
-                //Glass (refract) (this does not work :/ )
-                // if (mat == Material_Glass) {
-                //     double refractionIndex = 1.5;
-                //     Vec3 unitDirection = ray.direction();
-                //     unitDirection.normalize();  // Ensure normalization before using it in refraction
-                //     Vec3 refracted = refract(unitDirection, N, 1.0 / refractionIndex);
-                
-                //     // If refraction is possible (no total internal reflection)
-                //     if (refracted.squareLength() > 0) {
-                //         Ray refractedRay(intersectionPoint + N * 0.001f, refracted);
-                //         color += rayTraceRecursive(refractedRay, NRemainingBounces - 1);
-                //     }
-                // }
+                // //Glass (refract) (WORKS!!!)
+                // //https://physics.stackexchange.com/questions/435512/snells-law-in-vector-form
+                if (mat.type == Material_Glass) {
+                    mat.index_medium = 1.5f; // Glass
 
+                    Vec3 n_inter;
+                    float N1;
+                    float N2;
+                    //check if in or out of spghere
+                    if(Vec3::dot(ray.direction(), N) < 0){
+                        n_inter = N;
+                        N1 = 1.0f;
+                        N2 = mat.index_medium;
+                    } else {
+                        n_inter = -1*N;
+                        N1 = mat.index_medium;
+                        N2 = 1.0f;
+                    }
+                    //Vec3 n_inter = N;
+                    
+                    Vec3 refractedDir = refract(ray.direction(), n_inter, N1, N2);
+                    Ray refractedRay(intersectionPoint - n_inter * 0.001f, refractedDir);
+                    color = rayTraceRecursive(refractedRay, NRemainingBounces - 1);
+                    return color;
+                }
 
 
                 //Ambient
@@ -305,15 +326,35 @@ public:
         return v - 2 * Vec3::dot(v, N) * N;
     }
 
-    Vec3 refract(Vec3 & uv , Vec3 & n , double etai_over_etat){
-        uv.normalize();
-        double cos_theta = fmin(Vec3::dot((-1*uv) , n) , 1.0);
-        Vec3 r_out_perp = etai_over_etat * (uv + cos_theta * n);
-        if ((1 - r_out_perp.squareLength()) < 0) {
-            return Vec3(0, 0, 0); 
+    Vec3 refract(const Vec3 & i, const Vec3 & N, float N1,float N2) {
+
+        Vec3 n = N;
+
+        float ni = Vec3::dot(i,n);
+        float ni2 = ni * ni;
+
+        float n1 = N1;
+        float n2 = N2;
+
+        if(ni < 0){
+            ni = -ni;
         }
-        Vec3 r_out_parallel = -1 * sqrt(fabs(1.0 - r_out_perp.squareLength())) * n;
-        return r_out_perp + r_out_parallel;
+        else{
+            n = -1*n;
+            n1 = N2;
+            n2 = N1;
+            std::cout << "ni > 0 OUTSIDE" << std::endl;
+        }
+
+        float mu = n1 / n2;
+        float mu2 = mu * mu;
+
+        
+        Vec3 t = (mu*ni - sqrt(1 - mu2 * (1 - ni2))) * n + mu * (i);
+
+        //formule de base, doesn't really work as intended
+        //Vec3 t = (sqrt(1 - mu2 * (1 - ni2))) * n + mu * (i - ni * n);
+        return t;
     }
 
     void setup_single_sphere() {
@@ -397,13 +438,13 @@ public:
             s.scale(Vec3(2., 2., 1.));
             s.translate(Vec3(0., 0., -2.));
             s.build_arrays();
-            s.material.diffuse_material = Vec3( 0.5 , 0.7 , 0.3);
+            // s.material.diffuse_material = Vec3( 0.5 , 0.7 , 0.3);
+            s.material.diffuse_material = Vec3( 1.0 , 0.0 , 0.0); // Red
             s.material.specular_material = Vec3( 1.,1.,1. );
             s.material.shininess = 16;
         }
 
         { //Left Wall
-
             squares.resize( squares.size() + 1 );
             Square & s = squares[squares.size() - 1];
             s.setQuad(Vec3(-1., -1., 0.), Vec3(1., 0, 0.), Vec3(0., 1, 0.), 2., 2.);
@@ -411,7 +452,8 @@ public:
             s.translate(Vec3(0., 0., -2.));
             s.rotate_y(90);
             s.build_arrays();
-            s.material.diffuse_material =  Vec3( 0.2,0.4,0.15 );
+            // s.material.diffuse_material =  Vec3( 0.2,0.4,0.15 );
+            s.material.diffuse_material = Vec3( 0.0 , 1.0 , 0.0); // Green
             s.material.specular_material = Vec3( 0.,0.,0. );
             s.material.shininess = 16;
         }
@@ -424,7 +466,8 @@ public:
             s.scale(Vec3(2., 2., 1.));
             s.rotate_y(-90);
             s.build_arrays();
-            s.material.diffuse_material = Vec3( 0.2,0.4,0.15 );
+            // s.material.diffuse_material = Vec3( 0.3,0.5,0.25 );
+            s.material.diffuse_material = Vec3( 0.0 , 0.0 , 1.0); // Blue
             s.material.specular_material = Vec3( 0.0,1.0,0.0 );
             s.material.shininess = 16;
         }
@@ -619,6 +662,7 @@ public:
             mesh.triangles[0] = MeshTriangle(0, 1, 2);
 
             // Set material properties
+            mesh.material.type = Material_Mirror;
             mesh.material.diffuse_material = Vec3(0.0, 1.0, 0.0);
             mesh.material.specular_material = Vec3(0.2, 0.2, 0.2);
             mesh.material.shininess = 20;
@@ -729,7 +773,10 @@ public:
             //m.loadOFF("./img/camel.off"); 
             //m.loadOFF("./img/cheese-box.off");
             m.loadOFF("./img/blob.off");
+            //m.loadOFF("./img/suzanne.off");
             m.recomputeNormals();
+            m.translate(Vec3(-1.0, -1.25, -0.5));
+            //m.material.type = Material_Glass;
             m.material.diffuse_material = Vec3(0.0, 1.0, 0.0);
             m.material.specular_material = Vec3(0.2, 0.2, 0.2);
             m.material.shininess = 20;

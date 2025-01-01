@@ -36,6 +36,8 @@ using namespace std;
 
 #include "src/Material.h"
 
+#include <chrono>
+
 
 // -------------------------------------------
 // OpenGL/GLUT application code.
@@ -173,10 +175,11 @@ void ray_trace_from_camera() {
     std::cout << "Ray tracing a " << w << " x " << h << " image" << std::endl;
     camera.apply();
     Vec3 pos , dir;
-    //    unsigned int nsamples = 100;
+    //unsigned int nsamples = 100;
     //unsigned int nsamples = 50;
-    unsigned int nsamples = 10;
-    //unsigned int nsamples = 25;
+    //unsigned int nsamples = 10;
+    unsigned int nsamples = 25;
+    //unsigned int nsamples = 5;
     std::vector< Vec3 > image( w*h , Vec3(0,0,0) );
     for (int y=0; y<h; y++){
         for (int x=0; x<w; x++) {
@@ -237,9 +240,22 @@ void key (unsigned char keyPressed, int x, int y) {
     case 'r':
         camera.apply();
         rays.clear();
-        ray_trace_from_camera();
+
+        {
+            auto start = std::chrono::system_clock::now();
+            ray_trace_from_camera();
+            auto end = std::chrono::system_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+            auto minutes = std::chrono::duration_cast<std::chrono::minutes>(duration);
+            duration -= minutes;
+            auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration);
+            duration -= seconds;
+            auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
+            std::cout << "Time to raytrace : " << minutes.count() << " min " << seconds.count() << " sec " << milliseconds.count() << " ms" << std::endl;
+        }
+
         break;
-    case '+':
+        case '+':
         selected_scene++;
         if( selected_scene >= scenes.size() ) selected_scene = 0;
         break;

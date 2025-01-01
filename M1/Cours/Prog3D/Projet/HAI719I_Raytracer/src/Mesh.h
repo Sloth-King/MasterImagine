@@ -13,6 +13,8 @@
 
 #include <cfloat>
 
+#include "KdTree.h"
+
 
 // -------------------------------------------
 // Basic Mesh class
@@ -102,7 +104,21 @@ public:
     std::vector< float > uvs_array;
     std::vector< unsigned int > triangles_array;
 
+    KdTreeNode kdTree;
+
+
     Material material;
+
+    std::vector<Triangle> toTriangles() const {
+        std::vector<Triangle> result;
+        for (const auto& meshTriangle : triangles) {
+            Triangle tri(vertices[meshTriangle[0]].position,
+                         vertices[meshTriangle[1]].position,
+                         vertices[meshTriangle[2]].position);
+            result.push_back(tri);
+        }
+        return result;
+    }
 
     void loadOFF (const std::string & filename);
     void recomputeNormals ();
@@ -117,6 +133,9 @@ public:
         build_normals_array();
         build_UVs_array();
         build_triangles_array();
+
+        std::vector<Triangle> triangles = toTriangles();
+        kdTree.build(triangles, 0);
     }
 
 
@@ -132,7 +151,7 @@ public:
         }
 
         //        recomputeNormals();
-        //        build_positions_array();
+        //        build_positions_array();Median: The middle number; found by ordering all data points and picking out the one in the middle (or if there are two middle numbers, taking the mean of those two numbers). 
         //        build_normals_array();
     }
 
@@ -198,24 +217,30 @@ public:
 
     }
 
-    RayTriangleIntersection intersect( Ray const & ray ) const {
-        RayTriangleIntersection closestIntersection;
-        closestIntersection.t = FLT_MAX;
-        // Note :
-        // Creer un objet Triangle pour chaque face
-        // Vous constaterez des problemes de précision
-        // solution : ajouter un facteur d'échelle lors de la création du Triangle : float triangleScaling = 1.000001;
-        for (const auto& triangle : triangles) {
-            Triangle tri(vertices[triangle[0]].position * 1.000001f,
-                 vertices[triangle[1]].position * 1.000001f,
-                 vertices[triangle[2]].position * 1.000001f);
-            RayTriangleIntersection intersection = tri.getIntersection(ray);
-            if (intersection.intersectionExists && intersection.t < closestIntersection.t) {
-            closestIntersection = intersection;
-            //closestIntersection.material = material;
-            }
-        }
-        return closestIntersection;
+    //no kd (shoutout kevin durant)
+    // RayTriangleIntersection intersect( Ray const & ray ) const {
+    //     RayTriangleIntersection closestIntersection;
+    //     closestIntersection.t = FLT_MAX;
+    //     // Note :
+    //     // Creer un objet Triangle pour chaque face
+    //     // Vous constaterez des problemes de précision
+    //     // solution : ajouter un facteur d'échelle lors de la création du Triangle : float triangleScaling = 1.000001;
+    //     for (const auto& triangle : triangles) {
+    //         Triangle tri(vertices[triangle[0]].position * 1.000001f,
+    //              vertices[triangle[1]].position * 1.000001f,
+    //              vertices[triangle[2]].position * 1.000001f);
+    //         RayTriangleIntersection intersection = tri.getIntersection(ray);
+    //         if (intersection.intersectionExists && intersection.t < closestIntersection.t) {
+    //         closestIntersection = intersection;
+    //         //closestIntersection.material = material;
+    //         }
+    //     }
+    //     return closestIntersection;
+    // }
+
+    //uhhh kd tree
+    RayTriangleIntersection intersect(Ray const &ray) {
+        return kdTree.traverse(ray , 0.0f , FLT_MAX);
     }
 };
 
