@@ -925,7 +925,6 @@ int main(int argc, char **argv) {
         project(mesh.vertices, projection_on_basis, basis.origin(), basis.normalized_axis(i));
 
         // Question 2.5: TODO Compléter
-        // variance[i] =...
         variance[i] = 0.;
         for (unsigned int j = 0; j < projection_on_basis.size(); j++) {
             variance[i] += (projection_on_basis[j] - basis.origin()).length();
