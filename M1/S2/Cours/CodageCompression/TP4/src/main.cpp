@@ -166,7 +166,8 @@ int main(int argc, char **argv)
 	// //sscanf (argv[4],"%d",&S2);
 	
 	ImageBase imIn;
-	imIn.load("img/in/dirk.pgm");
+	imIn.load("img/in/binturong.pgm");
+	//imIn.load("img/in/singe.pgm");
 	std::vector<int> histo;
 	histogramme_pgm(imIn , histo);
 
@@ -185,11 +186,132 @@ int main(int argc, char **argv)
 	float psnr = PSNR(255.0, eqm);
 	std::cout << "PSNR: " << psnr << std::endl;
 
-	BF.save("img/out/dirk_BF.pgm");
-	MFh.save("img/out/dirk_MFh.pgm");
-	MFv.save("img/out/dirk_MFv.pgm");
-	HF.save("img/out/dirk_HF.pgm");
+	BF.save("img/out/binturong_BF.pgm");
+	MFh.save("img/out/binturong_MFh.pgm");
+	MFv.save("img/out/binturong_MFv.pgm");
+	HF.save("img/out/binturong_HF.pgm");
 	imOut.save("img/out/reconstructed.pgm");
+
+	ImageBase imOut2(imIn.getWidth(), imIn.getHeight() , imIn.getColor());
+
+	quantification_q(BF , MFh , MFv , HF , 50 , 50 , 50 , 50);
+	inverse_quantification_q(BF , MFh , MFv , HF , 50 , 50 , 50 , 50);
+
+	reconstruct_ondelettes(BF , MFh , MFv , HF , imOut2);
+
+	eqm = EQM_gris(imOut, imOut2);
+	psnr = PSNR(255.0, eqm);
+	std::cout << "PSNR: " << psnr << std::endl;
+
+	imOut2.save("img/out/reconstructed_quant_50.pgm");
+
+	ImageBase imOut3(imIn.getWidth(), imIn.getHeight() , imIn.getColor());
+
+	int N = 2;
+
+	ondelettes_recursive(imIn , imOut3 , N);
+
+	ImageBase imOut4(imIn.getWidth(), imIn.getHeight() , imIn.getColor());
+
+
+	reconstruct_ondelettes_recursive(imOut3, imOut4 , N);
+
+	imOut3.save("img/out/ondelette_recursive2.pgm");
+
+	eqm = EQM_gris(imIn, imOut4);
+	psnr = PSNR(255.0, eqm);
+	std::cout << "PSNR (imIn vs imOut4): " << psnr << std::endl;
+
+	imOut4.save("img/out/reconstructed_full.pgm");
+
+	ImageBase imColor;
+	imColor.load("img/in/binturong.ppm");
+
+	ImageBase cBF(imColor.getWidth()/2, imColor.getHeight()/2 , imColor.getColor());
+    ImageBase cMFh(imColor.getWidth()/2 , imColor.getHeight()/2 , imColor.getColor());
+    ImageBase cMFv(imColor.getWidth()/2 , imColor.getHeight()/2 , imColor.getColor());
+    ImageBase cHF(imColor.getWidth()/2, imColor.getHeight()/2 , imColor.getColor());
+
+	transform_ondelettes_ppm(imColor , cBF , cMFh , cMFv , cHF);
+
+	ImageBase imColorOut(imColor.getWidth(), imColor.getHeight(), imColor.getColor());
+
+	reconstruct_ondelettes_ppm(cBF, cMFh, cMFv, cHF, imColorOut);
+
+	float eqmColor = EQM(imColor, imColorOut);
+	float psnrColor = PSNR(255.0, eqmColor);
+	std::cout << "PSNR (Color): " << psnrColor << std::endl;
+
+	imColorOut.save("img/out/reconstructed_color.ppm");
+	ImageBase imOut2Color(imColor.getWidth(), imColor.getHeight(), imColor.getColor());
+
+	// quantify_ppm(cBF, cMFh, cMFv, cHF, 10, 10, 10, 10);
+	// inverse_quantify_ppm(cBF, cMFh, cMFv, cHF, 10, 10, 10, 10);
+
+	reconstruct_ondelettes_ppm(cBF, cMFh, cMFv, cHF, imOut2Color);
+
+	eqmColor = EQM(imColor, imOut2Color);
+	psnrColor = PSNR(255.0, eqmColor);
+	std::cout << "PSNR (Color): " << psnrColor << std::endl;
+
+	imOut2Color.save("img/out/reconstructed_quant_10_color.ppm");
+
+	ImageBase imOut3Color(imColor.getWidth(), imColor.getHeight(), imColor.getColor());
+
+	int Nc = 3;
+
+	ondelettes_recursive(imColor, imOut3Color, N);
+
+	ImageBase imOut4Color(imColor.getWidth(), imColor.getHeight(), imColor.getColor());
+
+	reconstruct_ondelettes_recursive(imOut3Color, imOut4Color, N);
+
+	imOut3Color.save("img/out/ondelette_recursive2_color.ppm");
+
+	eqmColor = EQM(imColor, imOut4Color);
+	psnrColor = PSNR(255.0, eqmColor);
+	std::cout << "PSNR (imColor vs imOut4Color): " << psnrColor << std::endl;
+
+	imOut4Color.save("img/out/reconstructed_full_color.ppm");
+
+
+
+    std::ofstream outFile("data.txt");
+    outFile << "N Q bpp PSNR" << std::endl;
+
+    ImageBase imIn2;
+    imIn2.load("img/in/binturong.pgm");
+	for (int N = 1; N <= 6; ++N) {
+		for (int Q = 10; Q <= 100; Q += 10) {
+			ImageBase BF(imIn2.getWidth() / 2, imIn2.getHeight() / 2, imIn2.getColor());
+			ImageBase MFh(imIn2.getWidth() / 2, imIn2.getHeight() / 2, imIn2.getColor());
+			ImageBase MFv(imIn2.getWidth() / 2, imIn2.getHeight() / 2, imIn2.getColor());
+			ImageBase HF(imIn2.getWidth() / 2, imIn2.getHeight() / 2, imIn2.getColor());
+
+			ImageBase imTemp(imIn2.getWidth(), imIn2.getHeight(), imIn2.getColor());
+
+			ondelettes_recursive(imIn2, imTemp, N);
+			quantification_q(BF, MFh, MFv, HF, Q, Q, Q, Q);
+			inverse_quantification_q(BF, MFh, MFv, HF, Q, Q, Q, Q);
+
+			ImageBase imOut(imIn2.getWidth(), imIn2.getHeight(), imIn2.getColor());
+			reconstruct_ondelettes_recursive(imTemp, imOut, N);
+
+			float eqm = EQM_gris(imIn2, imOut);
+			float psnr = PSNR(255.0, eqm);
+
+			float entropy = entropy_pgm(imOut);
+
+			outFile << N << " " << Q << " " << entropy << " " << psnr << std::endl;
+		}
+	}
+
+    outFile.close();
+	// BF.save("img/out/singe_BF.pgm");
+	// MFh.save("img/out/singe_MFh.pgm");
+	// MFv.save("img/out/singe_MFv.pgm");
+	// HF.save("img/out/singe_HF.pgm");
+	// imOut.save("img/out/singe_econstructed.pgm");
 
 	///////////////////////////////////////// Exemple de cr�ation d'une image couleur
 	ImageBase imC(50, 100, true);

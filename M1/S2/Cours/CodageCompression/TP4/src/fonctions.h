@@ -4,6 +4,7 @@
 #include <fstream>
 #include <vector>
 #include <cmath>
+#include <algorithm>
 
 void seuil2(ImageBase &imIn, ImageBase &imOut, int S1){
     for(int x = 0; x < imIn.getHeight(); ++x)
@@ -456,41 +457,272 @@ void carte_diff(ImageBase &imIn , ImageBase &imOut, int type){
     }
 }
 
+// ------------------------------------------------------------------------------------------------------------------------
 //Ondelettes
 
 void transform_ondelettes(ImageBase &imIn ,ImageBase &imBF , ImageBase &imMFh , ImageBase &imMFv , ImageBase &imHF){
     int A , B , C , D;
     
-    for(int x = 0; x < imIn.getHeight()-2; x+=2){
-        for(int y = 0; y < imIn.getWidth()-2; y+=2){
-            //assign neighbors
+    for(int x = 0; x < imIn.getHeight(); x+=2){
+        for(int y = 0; y < imIn.getWidth(); y+=2){
             A = imIn[x][y];
             B = imIn[x][y+1];
             C = imIn[x+1][y];
             D = imIn[x+1][y+1];
             
             imBF[x/2][y/2] = (A+B+C+D)/4;
-            imMFh[x/2][y/2] = (A+B-C-D)/2;
-            imMFv[x/2][y/2] = (A-B+C-D)/2;
-            imHF[x/2][y/2] = A-B-C+D;
+            imMFh[x/2][y/2] = (A+B-C-D)/2 + 128;
+            imMFv[x/2][y/2] = (A-B+C-D)/2 + 128;
+            imHF[x/2][y/2] = A-B-C+D + 128;
         }
     }
 }
 
 void reconstruct_ondelettes(ImageBase &imBF , ImageBase &imMFh , ImageBase &imMFv , ImageBase &imHF , ImageBase &imOut){
     int A , B , C , D;
-    for(int x = 0; x < imOut.getHeight()-2; x+=2){
-        for(int y = 0; y < imOut.getWidth()-2; y+=2){
-            A = (imBF[x/2][y/2] + imMFh[x/2][y/2] + imMFv[x/2][y/2] + imHF[x/2][y/2]) ;
-            B = (imBF[x/2][y/2] + imMFh[x/2][y/2] - imMFv[x/2][y/2] - imHF[x/2][y/2]) ;
-            C = (imBF[x/2][y/2] - imMFh[x/2][y/2] + imMFv[x/2][y/2] - imHF[x/2][y/2]) ;
-            D = (imBF[x/2][y/2] - imMFh[x/2][y/2] - imMFv[x/2][y/2] + imHF[x/2][y/2]) ;
+    for(int x = 0; x < imBF.getHeight(); x++){
+        for(int y = 0; y < imBF.getWidth(); y++){
+            A = (imBF[x][y]) + ((imMFh[x][y] - 128) / 2.0f) + ((imMFv[x][y] - 128)/2.0f) + ((imHF[x][y] - 128) / 4.0f) ;
+            B = (imBF[x][y]) + ((imMFh[x][y] - 128) / 2.0f) - ((imMFv[x][y] - 128)/2.0f) - ((imHF[x][y] - 128) / 4.0f) ;
+            C = (imBF[x][y]) - ((imMFh[x][y] - 128) / 2.0f) + ((imMFv[x][y] - 128)/2.0f) - ((imHF[x][y] - 128) / 4.0f) ;
+            D = (imBF[x][y]) - ((imMFh[x][y] - 128) / 2.0f) - ((imMFv[x][y] - 128)/2.0f) + ((imHF[x][y] - 128) / 4.0f) ;
 
-            imOut[x][y] = A;
-            imOut[x][y+1] = B;
-            imOut[x+1][y] = C;
-            imOut[x+1][y+1] = D;
+            imOut[x*2][y*2] = std::clamp(A , 0 , 255);
+            imOut[x*2][(y*2)+1] = std::clamp(B , 0 , 255);
+            imOut[(x*2)+1][y*2] = std::clamp(C , 0 , 255);
+            imOut[(x*2)+1][(y*2)+1] = std::clamp(D , 0 , 255);
         }
     }    
 }
 
+void quantification_q(ImageBase &imBF , ImageBase &imMFh , ImageBase &imMFv , ImageBase &imHF , int qBF , int qMFh , int qMFv , int qHF){
+    for(int x = 0; x < imBF.getHeight(); x++){
+        for(int y = 0; y < imBF.getWidth(); y++){
+            imBF[x][y] = imBF[x][y] / qBF;
+            imMFh[x][y] = imMFh[x][y] / qMFh;
+            imMFv[x][y] = imMFv[x][y] / qMFv;
+            imHF[x][y] = imHF[x][y] / qHF;
+        }
+    }
+}
+
+void inverse_quantification_q(ImageBase &imBF , ImageBase &imMFh , ImageBase &imMFv , ImageBase &imHF , int qBF , int qMFh , int qMFv , int qHF){
+    for(int x = 0; x < imBF.getHeight(); x++){
+        for(int y = 0; y < imBF.getWidth(); y++){
+            imBF[x][y] = imBF[x][y] * qBF;
+            imMFh[x][y] = imMFh[x][y] * qMFh;
+            imMFv[x][y] = imMFv[x][y] * qMFv;
+            imHF[x][y] = imHF[x][y] * qHF;
+        }
+    }
+}
+
+void reconstruct_ondelettes_recursive(ImageBase &imIn, ImageBase &imOut, int N) {
+    std::cout << "Reconstruction Iteration: " << N << std::endl;
+
+    int halfHeight = imIn.getHeight() / 2;
+    int halfWidth = imIn.getWidth() / 2;
+
+    ImageBase BF(halfWidth, halfHeight, imIn.getColor());
+    ImageBase MFh(halfWidth, halfHeight, imIn.getColor());
+    ImageBase MFv(halfWidth, halfHeight, imIn.getColor());
+    ImageBase HF(halfWidth, halfHeight, imIn.getColor());
+
+    for (int x = 0; x < halfHeight; x++) {
+        for (int y = 0; y < halfWidth; y++) {
+            BF[x][y] = imIn[x][y];
+            MFh[x][y] = imIn[x][y + halfWidth];
+            MFv[x][y] = imIn[x + halfHeight][y];
+            HF[x][y] = imIn[x + halfHeight][y + halfWidth];
+        }
+    }
+
+    if (N > 1) {
+        reconstruct_ondelettes_recursive(BF, BF, N - 1);
+    }
+
+    int A, B, C, D;
+    for (int x = 0; x < halfHeight; x++) {
+        for (int y = 0; y < halfWidth; y++) {
+            A = (BF[x][y]) + ((MFh[x][y] - 128) / 2.0f) + ((MFv[x][y] - 128) / 2.0f) + ((HF[x][y] - 128) / 4.0f);
+            B = (BF[x][y]) + ((MFh[x][y] - 128) / 2.0f) - ((MFv[x][y] - 128) / 2.0f) - ((HF[x][y] - 128) / 4.0f);
+            C = (BF[x][y]) - ((MFh[x][y] - 128) / 2.0f) + ((MFv[x][y] - 128) / 2.0f) - ((HF[x][y] - 128) / 4.0f);
+            D = (BF[x][y]) - ((MFh[x][y] - 128) / 2.0f) - ((MFv[x][y] - 128) / 2.0f) + ((HF[x][y] - 128) / 4.0f);
+
+            imOut[x * 2][y * 2] = std::clamp(A, 0, 255);
+            imOut[x * 2][(y * 2) + 1] = std::clamp(B, 0, 255);
+            imOut[(x * 2) + 1][y * 2] = std::clamp(C, 0, 255);
+            imOut[(x * 2) + 1][(y * 2) + 1] = std::clamp(D, 0, 255);
+        }
+    }
+}
+
+void ondelettes_recursive(ImageBase &imIn , ImageBase &imOut , int N){
+
+    std::cout << "Iteration : " << N << std::endl;
+
+    int A , B , C , D;
+    int halfHeight = imIn.getHeight() / 2;
+    int halfWidth = imIn.getWidth() / 2;
+
+    ImageBase BF(imIn.getWidth()/2, imIn.getHeight()/2 , imIn.getColor());
+    ImageBase MFh(imIn.getWidth()/2 , imIn.getHeight()/2 , imIn.getColor());
+    ImageBase MFv(imIn.getWidth()/2 , imIn.getHeight()/2 , imIn.getColor());
+    ImageBase HF(imIn.getWidth()/2, imIn.getHeight()/2 , imIn.getColor());
+
+    for(int x = 0; x < imIn.getHeight(); x+=2){
+        for(int y = 0; y < imIn.getWidth(); y+=2){
+            A = imIn[x][y];
+            B = imIn[x][y+1];
+            C = imIn[x+1][y];
+            D = imIn[x+1][y+1];
+
+            BF[x/2][y/2] = (A+B+C+D)/4;
+            MFh[x/2][y/2] = (A+B-C-D)/2 + 128;
+            MFv[x/2][y/2] = (A-B+C-D)/2 + 128;
+            HF[x/2][y/2] = A-B-C+D + 128;
+        }
+    }
+
+    if(N>1){
+        ondelettes_recursive(BF , BF , N-1);
+    }
+
+    for(int x = 0; x < imIn.getHeight(); x+=2){
+        for(int y = 0; y < imIn.getWidth(); y+=2){
+            int newX = x / 2;
+            int newY = y / 2;
+
+            imOut[newX][newY] = BF[x/2][y/2];
+            imOut[newX][newY + halfWidth] = MFh[x/2][y/2];
+            imOut[newX + halfHeight][newY] = MFv[x/2][y/2]; 
+            imOut[newX + halfHeight][newY + halfWidth] = HF[x/2][y/2]; 
+        }
+    }
+}
+
+void transform_ondelettes_ppm(ImageBase &imIn, ImageBase &imBF, ImageBase &imMFh, ImageBase &imMFv, ImageBase &imHF) {
+    int A, B, C, D;
+    
+    for (int x = 0; x < imIn.getHeight(); x += 2) {
+        for (int y = 0; y < imIn.getWidth(); y += 2) {
+            for (int c = 0; c < 3; c++) {
+                A = imIn[x * 3][y * 3 + c];
+                B = imIn[x * 3][(y + 1) * 3 + c];
+                C = imIn[(x + 1) * 3][y * 3 + c];
+                D = imIn[(x + 1) * 3][(y + 1) * 3 + c];
+                
+                imBF[(x / 2) * 3][(y / 2) * 3 + c] = (A + B + C + D) / 4;
+                imMFh[(x / 2) * 3][(y / 2) * 3 + c] = (A + B - C - D) / 2 + 128;
+                imMFv[(x / 2) * 3][(y / 2) * 3 + c] = (A - B + C - D) / 2 + 128;
+                imHF[(x / 2) * 3][(y / 2) * 3 + c] = A - B - C + D + 128;
+            }
+        }
+    }
+}
+
+void reconstruct_ondelettes_ppm(ImageBase &imBF, ImageBase &imMFh, ImageBase &imMFv, ImageBase &imHF, ImageBase &imOut) {
+    int A, B, C, D;
+    
+    for (int x = 0; x < imBF.getHeight(); x++) {
+        for (int y = 0; y < imBF.getWidth(); y++) {
+            for (int c = 0; c < 3; c++) {
+                A = imBF[x * 3][y * 3 + c] + ((imMFh[x * 3][y * 3 + c] - 128) / 2.0f) + ((imMFv[x * 3][y * 3 + c] - 128) / 2.0f) + ((imHF[x * 3][y * 3 + c] - 128) / 4.0f);
+                B = imBF[x * 3][y * 3 + c] + ((imMFh[x * 3][y * 3 + c] - 128) / 2.0f) - ((imMFv[x * 3][y * 3 + c] - 128) / 2.0f) - ((imHF[x * 3][y * 3 + c] - 128) / 4.0f);
+                C = imBF[x * 3][y * 3 + c] - ((imMFh[x * 3][y * 3 + c] - 128) / 2.0f) + ((imMFv[x * 3][y * 3 + c] - 128) / 2.0f) - ((imHF[x * 3][y * 3 + c] - 128) / 4.0f);
+                D = imBF[x * 3][y * 3 + c] - ((imMFh[x * 3][y * 3 + c] - 128) / 2.0f) - ((imMFv[x * 3][y * 3 + c] - 128) / 2.0f) + ((imHF[x * 3][y * 3 + c] - 128) / 4.0f);
+
+                imOut[(x * 2) * 3][(y * 2) * 3 + c] = std::clamp(A, 0, 255);
+                imOut[(x * 2) * 3][(y * 2 + 1) * 3 + c] = std::clamp(B, 0, 255);
+                imOut[(x * 2 + 1) * 3][(y * 2) * 3 + c] = std::clamp(C, 0, 255);
+                imOut[(x * 2 + 1) * 3][(y * 2 + 1) * 3 + c] = std::clamp(D, 0, 255);
+            }
+        }
+    }
+}
+void ondelettes_recursive_ppm(ImageBase &imIn, ImageBase &imOut, int N) {
+    std::cout << "Iteration: " << N << std::endl;
+
+    int halfHeight = imIn.getHeight() / 2;
+    int halfWidth = imIn.getWidth() / 2;
+
+    ImageBase BF(halfWidth, halfHeight, imIn.getColor());
+    ImageBase MFh(halfWidth, halfHeight, imIn.getColor());
+    ImageBase MFv(halfWidth, halfHeight, imIn.getColor());
+    ImageBase HF(halfWidth, halfHeight, imIn.getColor());
+
+    for (int x = 0; x < imIn.getHeight(); x += 2) {
+        for (int y = 0; y < imIn.getWidth(); y += 2) {
+            for (int c = 0; c < 3; c++) {
+                int A = imIn[(x * 3)][(y * 3) + c];
+                int B = imIn[(x * 3)][((y + 1) * 3) + c];
+                int C = imIn[((x + 1) * 3)][(y * 3) + c];
+                int D = imIn[((x + 1) * 3)][((y + 1) * 3) + c];
+
+                BF[(x / 2) * 3][(y / 2) * 3 + c] = (A + B + C + D) / 4;
+                MFh[(x / 2) * 3][(y / 2) * 3 + c] = (A + B - C - D) / 2 + 128;
+                MFv[(x / 2) * 3][(y / 2) * 3 + c] = (A - B + C - D) / 2 + 128;
+                HF[(x / 2) * 3][(y / 2) * 3 + c] = A - B - C + D + 128;
+            }
+        }
+    }
+
+    if (N > 1) {
+        ondelettes_recursive_ppm(BF, BF, N - 1);
+    }
+
+    for (int x = 0; x < halfHeight; x++) {
+        for (int y = 0; y < halfWidth; y++) {
+            for (int c = 0; c < 3; c++) {
+                imOut[(x * 3)][(y * 3) + c] = BF[(x * 3)][(y * 3) + c];
+                imOut[(x * 3)][((y + halfWidth) * 3) + c] = MFh[(x * 3)][(y * 3) + c];
+                imOut[((x + halfHeight) * 3)][(y * 3) + c] = MFv[(x * 3)][(y * 3) + c];
+                imOut[((x + halfHeight) * 3)][((y + halfWidth) * 3) + c] = HF[(x * 3)][(y * 3) + c];
+            }
+        }
+    }
+}
+
+void reconstruct_ondelettes_recursive_ppm(ImageBase &imIn, ImageBase &imOut, int N) {
+    std::cout << "Reconstruction Iteration: " << N << std::endl;
+
+    int halfHeight = imIn.getHeight() / 2;
+    int halfWidth = imIn.getWidth() / 2;
+
+    ImageBase BF(halfWidth, halfHeight, imIn.getColor());
+    ImageBase MFh(halfWidth, halfHeight, imIn.getColor());
+    ImageBase MFv(halfWidth, halfHeight, imIn.getColor());
+    ImageBase HF(halfWidth, halfHeight, imIn.getColor());
+
+    for (int x = 0; x < halfHeight; x++) {
+        for (int y = 0; y < halfWidth; y++) {
+            for (int c = 0; c < 3; c++) {
+                BF[(x * 3)][(y * 3) + c] = imIn[(x * 3)][(y * 3) + c];
+                MFh[(x * 3)][(y * 3) + c] = imIn[(x * 3)][((y + halfWidth) * 3) + c];
+                MFv[(x * 3)][(y * 3) + c] = imIn[((x + halfHeight) * 3)][(y * 3) + c];
+                HF[(x * 3)][(y * 3) + c] = imIn[((x + halfHeight) * 3)][((y + halfWidth) * 3) + c];
+            }
+        }
+    }
+
+    if (N > 1) {
+        reconstruct_ondelettes_recursive_ppm(BF, BF, N - 1);
+    }
+
+    int A, B, C, D;
+    for (int x = 0; x < halfHeight; x++) {
+        for (int y = 0; y < halfWidth; y++) {
+            for (int c = 0; c < 3; c++) {
+                A = BF[(x * 3)][(y * 3) + c] + ((MFh[(x * 3)][(y * 3) + c] - 128) / 2.0f) + ((MFv[(x * 3)][(y * 3) + c] - 128) / 2.0f) + ((HF[(x * 3)][(y * 3) + c] - 128) / 4.0f);
+                B = BF[(x * 3)][(y * 3) + c] + ((MFh[(x * 3)][(y * 3) + c] - 128) / 2.0f) - ((MFv[(x * 3)][(y * 3) + c] - 128) / 2.0f) - ((HF[(x * 3)][(y * 3) + c] - 128) / 4.0f);
+                C = BF[(x * 3)][(y * 3) + c] - ((MFh[(x * 3)][(y * 3) + c] - 128) / 2.0f) + ((MFv[(x * 3)][(y * 3) + c] - 128) / 2.0f) - ((HF[(x * 3)][(y * 3) + c] - 128) / 4.0f);
+                D = BF[(x * 3)][(y * 3) + c] - ((MFh[(x * 3)][(y * 3) + c] - 128) / 2.0f) - ((MFv[(x * 3)][(y * 3) + c] - 128) / 2.0f) + ((HF[(x * 3)][(y * 3) + c] - 128) / 4.0f);
+
+                imOut[((x * 2) * 3)][((y * 2) * 3) + c] = std::clamp(A, 0, 255);
+                imOut[((x * 2) * 3)][((y * 2 + 1) * 3) + c] = std::clamp(B, 0, 255);
+                imOut[((x * 2 + 1) * 3)][((y * 2) * 3) + c] = std::clamp(C, 0, 255);
+                imOut[((x * 2 + 1) * 3)][((y * 2 + 1) * 3) + c] = std::clamp(D, 0, 255);
+            }
+        }
+    }
+}
